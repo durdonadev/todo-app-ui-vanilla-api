@@ -72,3 +72,98 @@ class TodoAPI {
 }
 
 const todoAPI = new TodoAPI();
+
+class TodoUI {
+    static tasksUI = document.querySelector("ul");
+    async renderAll() {
+        try {
+            const response = await todoAPI.getAll();
+            TodoUI.tasksUI.innerText = "";
+            response.data.forEach((task) => {
+                this.renderOne(task);
+            });
+        } catch (error) {}
+    }
+
+    createElement(elementName) {
+        return document.createElement(elementName);
+    }
+
+    renderOne(task) {
+        const { id, text, status } = task;
+        const li = this.createElement("li");
+
+        const span = this.createElement("span");
+        span.innerText = text;
+
+        const select = this.createElement("select");
+        ["TODO", "INPROGRESS", "DONE"].forEach((item) => {
+            const option = this.createElement("option");
+            option.value = item;
+            option.innetText = item;
+            if (status === item) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+
+        select.addEventListener("change", async (e) => {
+            e.preventDefault();
+            try {
+                const value = select.value;
+                await todoAPI.updateStatus(id, value);
+            } catch (err) {
+                console.log(err);
+            }
+        });
+
+        const deleteButton = this.createElement("button");
+        deleteButton.innerText = "Delete";
+
+        deleteButton.addEventListener("click", async (e) => {
+            e.preventDefault();
+
+            try {
+                await todoAPI.deleteOne(id);
+                TodoUI.tasksUI.removwChild("li");
+            } catch (err) {
+                console.log(err);
+            }
+        });
+
+        li.appendChild(span);
+        li.appendChild(select);
+        li.appendChild(deleteButton);
+
+        TodoUI.tasksUI.appendChild(li);
+    }
+
+    initForm() {
+        const textarea = document.querySelector("#task-input");
+        const form = document.querySelector("form");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const { value } = textarea;
+
+            if (value.length < 3) {
+                throw new Error("Invalid Input");
+            }
+
+            try {
+                const { data } = await todoAPI.create(value);
+                textarea.value = "";
+                this.renderOne(data);
+            } catch (err) {}
+        });
+    }
+
+    init() {
+        this.initForm();
+        this.renderAll();
+    }
+}
+
+const todoUI = new TodoUI();
+
+todoUI.renderAll();

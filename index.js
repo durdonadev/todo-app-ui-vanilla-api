@@ -15,20 +15,35 @@ class TodoAPI {
                 const data = await response.json();
                 throw new Error(data.message);
             }
+
             return await response.json();
         } catch (error) {
             console.log(error.message);
         }
     }
-
     async getAll() {
         try {
             const response = await fetch("http://localhost:4000/tasks");
             if (!response.ok) {
+                throw new Error(response.error);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async deleteOne(id) {
+        try {
+            const response = await fetch(`http://localhost:4000/tasks/${id}`, {
+                method: "DELETE"
+            });
+
+            if (!response.ok) {
                 const data = await response.json();
                 throw new Error(data.message);
             }
-            return await response.json();
         } catch (error) {
             console.log(error.message);
         }
@@ -36,7 +51,7 @@ class TodoAPI {
 
     async updateStatus(id, status) {
         try {
-            const response = await fetch(`http://localhost:4000/tasks ${id}`, {
+            const response = await fetch(`http://localhost:4000/tasks/${id}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json"
@@ -54,31 +69,16 @@ class TodoAPI {
             console.log(error.message);
         }
     }
-
-    async deleteOne(id) {
-        try {
-            const response = await fetch(`http://localhost:4000/tasks ${id}`, {
-                method: "DELETE"
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message);
-            }
-        } catch (error) {
-            console.log(error.message);
-        }
-    }
 }
 
 const todoAPI = new TodoAPI();
 
 class TodoUI {
-    static tasksUI = document.querySelector("ul");
+    static tasksUl = document.querySelector("ul");
     async renderAll() {
         try {
             const response = await todoAPI.getAll();
-            TodoUI.tasksUI.innerText = "";
+            TodoUI.tasksUl.innerHTML = "";
             response.data.forEach((task) => {
                 this.renderOne(task);
             });
@@ -100,7 +100,7 @@ class TodoUI {
         ["TODO", "INPROGRESS", "DONE"].forEach((item) => {
             const option = this.createElement("option");
             option.value = item;
-            option.innetText = item;
+            option.innerText = item;
             if (status === item) {
                 option.selected = true;
             }
@@ -125,9 +125,9 @@ class TodoUI {
 
             try {
                 await todoAPI.deleteOne(id);
-                TodoUI.tasksUI.removwChild("li");
-            } catch (err) {
-                console.log(err);
+                TodoUI.tasksUl.removeChild(li);
+            } catch (error) {
+                console.log(error);
             }
         });
 
@@ -135,7 +135,7 @@ class TodoUI {
         li.appendChild(select);
         li.appendChild(deleteButton);
 
-        TodoUI.tasksUI.appendChild(li);
+        TodoUI.tasksUl.appendChild(li);
     }
 
     initForm() {
@@ -154,7 +154,9 @@ class TodoUI {
                 const { data } = await todoAPI.create(value);
                 textarea.value = "";
                 this.renderOne(data);
-            } catch (err) {}
+            } catch (err) {
+                console.log(err.message);
+            }
         });
     }
 
@@ -166,4 +168,4 @@ class TodoUI {
 
 const todoUI = new TodoUI();
 
-todoUI.renderAll();
+todoUI.init();
